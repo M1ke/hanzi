@@ -300,9 +300,13 @@
           this.answer = '';
           this.practiceAnswer = '';
           this.practiceCorrect = false;
+          if (correct) {
+            this.nextCard();
+            return;
+          }
           this.screen = 'result';
           this.$nextTick(() => {
-            if (this.practiceMode && !correct) {
+            if (this.practiceMode) {
               this.$refs.practiceInput?.focus();
             } else {
               this.$refs.nextBtn?.focus();
