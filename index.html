@@ -90,6 +90,7 @@
         x-model="answer"
         x-ref="answerInput"
         @keydown.enter="answer.trim() && submitAnswer()"
+        @keydown.escape="skipCard()"
         class="w-full border-2 border-gray-200 rounded-lg px-4 py-3 text-lg text-center focus:outline-none focus:border-blue-500 transition mb-3"
       >
       <div class="flex gap-3">
@@ -107,7 +108,7 @@
   </div>
 
   <!-- RESULT -->
-  <div x-show="screen === 'result'" class="max-w-lg mx-auto px-4 py-12" @keydown.window.enter="screen === 'result' && nextCard()">
+  <div x-show="screen === 'result'" class="max-w-lg mx-auto px-4 py-12">
     <div class="flex justify-between items-center mb-6">
       <span class="text-sm text-gray-500 font-medium">
         Card <span x-text="cardIndex + 1"></span> / <span x-text="cards.length"></span>
@@ -135,6 +136,7 @@
     <div class="bg-white rounded-xl shadow p-4">
       <div class="flex gap-3">
         <button
+          x-ref="nextBtn"
           @click="nextCard()"
           class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition"
           x-text="cardIndex + 1 < cards.length ? 'Next' : 'See Results'"
@@ -223,6 +225,7 @@
           this.results.push({ card: this.cards[this.cardIndex], correct });
           this.answer = '';
           this.screen = 'result';
+          this.$nextTick(() => this.$refs.nextBtn?.focus());
         },
 
         skipCard() {
@@ -232,6 +235,7 @@
           this.results.push({ card: this.cards[this.cardIndex], correct: false });
           this.answer = '';
           this.screen = 'result';
+          this.$nextTick(() => this.$refs.nextBtn?.focus());
         },
 
         nextCard() {
