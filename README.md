@@ -18,6 +18,15 @@ Enter any three letters as a **seed** (e.g. `ABC`, `sun`, `cat`). The same seed 
 | **Result** | Shows whether you were correct (green) or wrong/skipped (red), plus the correct pinyin. Press Enter or Next to continue. |
 | **Summary** | Your score out of 20, a colour-coded grid of all 20 cards, and options to try again or start a new session. |
 
+### Practice mode
+
+Tick **Practice mode** on the home screen before starting. When enabled, any wrong or skipped answer shows an extra input on the result screen — you must type the correct pinyin before the Next button unlocks. Typing the answer in this way does **not** affect your score; it is purely for reinforcement.
+
+Keyboard flow in practice mode:
+1. Wrong/skip → result screen, practice input is focused automatically
+2. Type the correct pinyin and press Enter (or click Check)
+3. Input turns green and Next is focused — press Enter to continue
+
 ### Pinyin input
 
 - Type bare pinyin — **no tone marks required** (`zhong` not `zhōng`)

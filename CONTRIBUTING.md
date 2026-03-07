@@ -33,6 +33,9 @@ Key state properties:
 | `cardIndex` | Index into `cards` for the current card |
 | `results` | Array of `{card, correct}` built up during a session |
 | `history` | Sessions loaded from / saved to localStorage |
+| `practiceMode` | Whether practice mode is enabled (checkbox on home screen) |
+| `practiceAnswer` | Current value of the practice pinyin input on the result screen |
+| `practiceCorrect` | Whether the practice answer for the current card has been typed correctly |
 
 ## Seeded card selection
 
@@ -75,6 +78,7 @@ The dataset currently contains ~820 characters drawn from the Jun Da frequency c
 |-----|--------|
 | Enter | Submit answer (card screen) / advance (result screen, Next button focused) |
 | Esc | Skip the current card |
+| Enter | Submit practice answer (result screen, practice mode, practice input focused) |
 
 ## Deploying to GitHub Pages
 
