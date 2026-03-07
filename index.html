@@ -214,8 +214,8 @@
         },
 
         submitAnswer() {
-          const userAnswer = this.answer.toLowerCase().trim();
-          const correct = userAnswer === this.cards[this.cardIndex].p;
+          const userAnswer = this.answer.toLowerCase().trim().replace(/v/g, 'u');
+          const correct = userAnswer === stripTones(this.cards[this.cardIndex].p);
           this.lastCorrect = correct;
           this.lastSkipped = false;
           this.lastAnswer = this.answer.trim();
@@ -257,6 +257,10 @@
           localStorage.setItem('hanzi_history', JSON.stringify(this.history));
         },
       };
+    }
+
+    function stripTones(s) {
+      return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     }
 
     function seedFromWord(word) {
