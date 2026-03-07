@@ -9,9 +9,10 @@
   <script src="data.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen" x-data="app()" x-init="init()">
+<div class="max-w-[600px] mx-auto px-4">
 
   <!-- HOME -->
-  <div x-show="screen === 'home'" class="max-w-lg mx-auto px-4 py-12">
+  <div x-show="screen === 'home'" class="py-12">
     <h1 class="text-4xl font-bold text-center text-gray-800 mb-2">汉字</h1>
     <p class="text-center text-gray-500 mb-8">Enter a 3-letter seed to start</p>
 
@@ -73,7 +74,7 @@
   </div>
 
   <!-- CARD -->
-  <div x-show="screen === 'card'" class="max-w-lg mx-auto px-4 py-12">
+  <div x-show="screen === 'card'" class="py-12">
     <div class="flex justify-between items-center mb-6">
       <span class="text-sm text-gray-500 font-medium">
         Card <span x-text="cardIndex + 1"></span> / <span x-text="cards.length"></span>
@@ -115,7 +116,7 @@
   </div>
 
   <!-- RESULT -->
-  <div x-show="screen === 'result'" class="max-w-lg mx-auto px-4 py-12">
+  <div x-show="screen === 'result'" class="py-12">
     <div class="flex justify-between items-center mb-6">
       <span class="text-sm text-gray-500 font-medium">
         Card <span x-text="cardIndex + 1"></span> / <span x-text="cards.length"></span>
@@ -153,7 +154,7 @@
   </div>
 
   <!-- PREVIEW -->
-  <div x-show="screen === 'preview'" class="max-w-lg mx-auto px-4 py-12 text-center">
+  <div x-show="screen === 'preview'" class="py-12 text-center">
     <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
       <div class="text-gray-400 text-sm mb-1">Preview</div>
       <div class="text-gray-700 font-bold tracking-widest mb-4" x-text="currentSeed"></div>
@@ -181,7 +182,7 @@
   </div>
 
   <!-- SUMMARY -->
-  <div x-show="screen === 'summary'" class="max-w-lg mx-auto px-4 py-12 text-center">
+  <div x-show="screen === 'summary'" class="py-12 text-center">
     <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
       <div class="text-6xl font-bold mb-2" :class="score / cards.length >= 0.8 ? 'text-green-600' : score / cards.length >= 0.5 ? 'text-yellow-600' : 'text-red-600'" x-text="score"></div>
       <div class="text-gray-500 text-lg mb-1">out of <span x-text="cards.length"></span> correct</div>
@@ -218,6 +219,7 @@
     </div>
   </div>
 
+</div><!-- /max-w wrapper -->
   <script>
     function app() {
       return {
