@@ -40,6 +40,10 @@
           >Start</button>
         </div>
       </div>
+      <label class="flex items-center gap-2 mt-4 cursor-pointer select-none w-fit">
+        <input type="checkbox" x-model="practiceMode" class="w-4 h-4 accent-blue-600">
+        <span class="text-sm text-gray-600 font-medium">Practice mode</span>
+      </label>
     </div>
 
     <div x-show="history.length > 0">
@@ -141,12 +145,35 @@
       ></div>
     </div>
 
+    <!-- Practice mode input (wrong or skipped answers only) -->
+    <div x-show="practiceMode && !lastCorrect" class="bg-white rounded-xl shadow p-4 mb-3">
+      <p class="text-sm text-gray-500 text-center mb-2">Type the correct pinyin to continue</p>
+      <input
+        type="text"
+        placeholder="Type pinyin..."
+        x-model="practiceAnswer"
+        x-ref="practiceInput"
+        @keydown.enter="!practiceCorrect && practiceAnswer.trim() && submitPractice()"
+        :disabled="practiceCorrect"
+        class="w-full border-2 rounded-lg px-4 py-3 text-lg text-center focus:outline-none transition mb-2"
+        :class="practiceCorrect ? 'border-green-400 bg-green-50 text-green-700' : 'border-gray-200 focus:border-blue-500'"
+      >
+      <div x-show="practiceCorrect" class="text-center text-green-600 text-sm font-medium">Correct! Press Next to continue.</div>
+      <button
+        x-show="!practiceCorrect"
+        @click="submitPractice()"
+        :disabled="!practiceAnswer.trim()"
+        class="w-full bg-gray-700 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2 rounded-lg transition"
+      >Check</button>
+    </div>
+
     <div class="bg-white rounded-xl shadow p-4">
       <div class="flex gap-3">
         <button
           x-ref="nextBtn"
           @click="nextCard()"
-          class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition"
+          :disabled="practiceMode && !lastCorrect && !practiceCorrect"
+          class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2 rounded-lg transition"
           x-text="cardIndex + 1 < cards.length ? 'Next' : 'See Results'"
         ></button>
       </div>
@@ -235,6 +262,9 @@
         score: 0,
         results: [],
         history: [],
+        practiceMode: false,
+        practiceAnswer: '',
+        practiceCorrect: false,
 
         init() {
           this.history = JSON.parse(localStorage.getItem('hanzi_history') || '[]');
@@ -268,8 +298,16 @@
           if (correct) this.score++;
           this.results.push({ card: this.cards[this.cardIndex], correct });
           this.answer = '';
+          this.practiceAnswer = '';
+          this.practiceCorrect = false;
           this.screen = 'result';
-          this.$nextTick(() => this.$refs.nextBtn?.focus());
+          this.$nextTick(() => {
+            if (this.practiceMode && !correct) {
+              this.$refs.practiceInput?.focus();
+            } else {
+              this.$refs.nextBtn?.focus();
+            }
+          });
         },
 
         skipCard() {
@@ -278,8 +316,24 @@
           this.lastAnswer = '';
           this.results.push({ card: this.cards[this.cardIndex], correct: false });
           this.answer = '';
+          this.practiceAnswer = '';
+          this.practiceCorrect = false;
           this.screen = 'result';
-          this.$nextTick(() => this.$refs.nextBtn?.focus());
+          this.$nextTick(() => {
+            if (this.practiceMode) {
+              this.$refs.practiceInput?.focus();
+            } else {
+              this.$refs.nextBtn?.focus();
+            }
+          });
+        },
+
+        submitPractice() {
+          const userAnswer = this.practiceAnswer.toLowerCase().trim().replace(/v/g, 'u');
+          this.practiceCorrect = userAnswer === stripTones(this.cards[this.cardIndex].p);
+          if (this.practiceCorrect) {
+            this.$nextTick(() => this.$refs.nextBtn?.focus());
+          }
         },
 
         nextCard() {
