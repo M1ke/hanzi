@@ -16,20 +16,20 @@
     <p class="text-center text-gray-500 mb-8">Enter a 3-letter seed to start</p>
 
     <div class="bg-white rounded-xl shadow p-6 mb-8">
-      <div class="flex gap-3">
+      <div class="flex flex-col sm:flex-row gap-3">
         <input
           type="text"
           maxlength="3"
           placeholder="ABC"
           x-model="seedInput"
-          @input="seedInput = seedInput.replace(/[^A-Z]/g, '').toUpperCase().slice(0,3)"
+          @input="seedInput = seedInput.replace(/[^a-zA-Z]/g, '').slice(0,3)"
           @keydown.enter="seedInput.length === 3 && startSession()"
           class="flex-1 border-2 border-gray-200 rounded-lg px-4 py-3 text-2xl font-bold text-center tracking-widest uppercase focus:outline-none focus:border-blue-500 transition"
         >
         <button
           @click="startSession()"
           :disabled="seedInput.length !== 3"
-          class="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-6 py-3 rounded-lg transition"
+          class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-6 py-3 rounded-lg transition"
         >Start</button>
       </div>
     </div>
@@ -107,7 +107,7 @@
   </div>
 
   <!-- RESULT -->
-  <div x-show="screen === 'result'" class="max-w-lg mx-auto px-4 py-12">
+  <div x-show="screen === 'result'" class="max-w-lg mx-auto px-4 py-12" @keydown.window.enter="screen === 'result' && nextCard()">
     <div class="flex justify-between items-center mb-6">
       <span class="text-sm text-gray-500 font-medium">
         Card <span x-text="cardIndex + 1"></span> / <span x-text="cards.length"></span>
@@ -132,11 +132,15 @@
       ></div>
     </div>
 
-    <button
-      @click="nextCard()"
-      class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition"
-      x-text="cardIndex + 1 < cards.length ? 'Next' : 'See Results'"
-    ></button>
+    <div class="bg-white rounded-xl shadow p-4">
+      <div class="flex gap-3">
+        <button
+          @click="nextCard()"
+          class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition"
+          x-text="cardIndex + 1 < cards.length ? 'Next' : 'See Results'"
+        ></button>
+      </div>
+    </div>
   </div>
 
   <!-- SUMMARY -->
@@ -198,7 +202,7 @@
         },
 
         startSession(seed) {
-          const s = seed || this.seedInput;
+          const s = (seed || this.seedInput).toUpperCase();
           this.currentSeed = s;
           this.cards = pickCards(s);
           this.cardIndex = 0;
