@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hanzi Flashcards</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/alpinejs@3/dist/cdn.min.js" defer></script>
+  <script src="data.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen" x-data="app()" x-init="init()">
+
+  <!-- HOME -->
+  <div x-show="screen === 'home'" class="max-w-lg mx-auto px-4 py-12">
+    <h1 class="text-4xl font-bold text-center text-gray-800 mb-2">汉字</h1>
+    <p class="text-center text-gray-500 mb-8">Enter a 3-letter seed to start</p>
+
+    <div class="bg-white rounded-xl shadow p-6 mb-8">
+      <div class="flex gap-3">
+        <input
+          type="text"
+          maxlength="3"
+          placeholder="ABC"
+          x-model="seedInput"
+          @input="seedInput = seedInput.replace(/[^A-Z]/g, '').toUpperCase().slice(0,3)"
+          @keydown.enter="seedInput.length === 3 && startSession()"
+          class="flex-1 border-2 border-gray-200 rounded-lg px-4 py-3 text-2xl font-bold text-center tracking-widest uppercase focus:outline-none focus:border-blue-500 transition"
+        >
+        <button
+          @click="startSession()"
+          :disabled="seedInput.length !== 3"
+          class="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-6 py-3 rounded-lg transition"
+        >Start</button>
+      </div>
+    </div>
+
+    <div x-show="history.length > 0">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Previous Sessions</h2>
+      <div class="bg-white rounded-xl shadow overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500 uppercase text-xs tracking-wide">
+            <tr>
+              <th class="px-4 py-2 text-left">Seed</th>
+              <th class="px-4 py-2 text-center">Score</th>
+              <th class="px-4 py-2 text-right">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(entry, i) in history.slice().reverse()" :key="i">
+              <tr class="border-t border-gray-100 hover:bg-gray-50 cursor-pointer" @click="seedInput = entry.seed">
+                <td class="px-4 py-3 font-bold text-gray-800 tracking-widest" x-text="entry.seed"></td>
+                <td class="px-4 py-3 text-center">
+                  <span
+                    class="font-semibold"
+                    :class="entry.score / entry.total >= 0.8 ? 'text-green-600' : entry.score / entry.total >= 0.5 ? 'text-yellow-600' : 'text-red-600'"
+                    x-text="entry.score + ' / ' + entry.total"
+                  ></span>
+                </td>
+                <td class="px-4 py-3 text-right text-gray-400" x-text="entry.date"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD -->
+  <div x-show="screen === 'card'" class="max-w-lg mx-auto px-4 py-12">
+    <div class="flex justify-between items-center mb-6">
+      <span class="text-sm text-gray-500 font-medium">
+        Card <span x-text="cardIndex + 1"></span> / <span x-text="cards.length"></span>
+      </span>
+      <span class="text-sm font-bold text-gray-600 tracking-widest" x-text="currentSeed"></span>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="w-full bg-gray-200 rounded-full h-1.5 mb-8">
+      <div class="bg-blue-500 h-1.5 rounded-full transition-all" :style="'width:' + (cardIndex / cards.length * 100) + '%'"></div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg p-8 text-center mb-6">
+      <div class="text-9xl font-normal mb-4 select-none" x-text="cards[cardIndex]?.c"></div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-4">
+      <input
+        type="text"
+        placeholder="Type pinyin..."
+        x-model="answer"
+        x-ref="answerInput"
+        @keydown.enter="answer.trim() && submitAnswer()"
+        class="w-full border-2 border-gray-200 rounded-lg px-4 py-3 text-lg text-center focus:outline-none focus:border-blue-500 transition mb-3"
+      >
+      <div class="flex gap-3">
+        <button
+          @click="skipCard()"
+          class="flex-1 border-2 border-gray-200 hover:bg-gray-50 text-gray-600 font-medium py-2 rounded-lg transition"
+        >Skip</button>
+        <button
+          @click="submitAnswer()"
+          :disabled="!answer.trim()"
+          class="flex-2 flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2 rounded-lg transition"
+        >Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div x-show="screen === 'result'" class="max-w-lg mx-auto px-4 py-12">
+    <div class="flex justify-between items-center mb-6">
+      <span class="text-sm text-gray-500 font-medium">
+        Card <span x-text="cardIndex + 1"></span> / <span x-text="cards.length"></span>
+      </span>
+      <span class="text-sm font-bold text-gray-600 tracking-widest" x-text="currentSeed"></span>
+    </div>
+
+    <div
+      class="rounded-2xl shadow-lg p-8 text-center mb-6"
+      :class="lastCorrect ? 'bg-green-50 border-2 border-green-200' : 'bg-red-50 border-2 border-red-200'"
+    >
+      <div class="text-9xl font-normal mb-4 select-none" x-text="cards[cardIndex]?.c"></div>
+      <div
+        class="text-3xl font-bold mb-1"
+        :class="lastCorrect ? 'text-green-600' : 'text-red-600'"
+        x-text="cards[cardIndex]?.p"
+      ></div>
+      <div
+        class="text-sm font-medium mt-2"
+        :class="lastCorrect ? 'text-green-500' : 'text-red-400'"
+        x-text="lastCorrect ? 'Correct!' : (lastSkipped ? 'Skipped' : 'Wrong — you said: ' + lastAnswer)"
+      ></div>
+    </div>
+
+    <button
+      @click="nextCard()"
+      class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition"
+      x-text="cardIndex + 1 < cards.length ? 'Next' : 'See Results'"
+    ></button>
+  </div>
+
+  <!-- SUMMARY -->
+  <div x-show="screen === 'summary'" class="max-w-lg mx-auto px-4 py-12 text-center">
+    <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
+      <div class="text-6xl font-bold mb-2" :class="score / cards.length >= 0.8 ? 'text-green-600' : score / cards.length >= 0.5 ? 'text-yellow-600' : 'text-red-600'" x-text="score"></div>
+      <div class="text-gray-500 text-lg mb-1">out of <span x-text="cards.length"></span> correct</div>
+      <div class="text-gray-400 text-sm" x-text="Math.round(score / cards.length * 100) + '%'"></div>
+
+      <div class="mt-6 pt-6 border-t border-gray-100">
+        <div class="text-sm text-gray-500 mb-3">Seed: <span class="font-bold text-gray-700 tracking-widest" x-text="currentSeed"></span></div>
+
+        <!-- Per-card breakdown -->
+        <div class="grid grid-cols-5 gap-1">
+          <template x-for="(result, i) in results" :key="i">
+            <div
+              class="rounded p-1 text-xs text-center"
+              :class="result.correct ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'"
+              :title="result.card.c + ' (' + result.card.p + ')'"
+            >
+              <div class="text-lg" x-text="result.card.c"></div>
+              <div x-text="result.card.p"></div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button
+        @click="startSession(currentSeed)"
+        class="flex-1 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold py-3 rounded-xl transition"
+      >Try Again</button>
+      <button
+        @click="screen = 'home'; seedInput = ''"
+        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition"
+      >New Session</button>
+    </div>
+  </div>
+
+  <script>
+    function app() {
+      return {
+        screen: 'home',
+        seedInput: '',
+        currentSeed: '',
+        cards: [],
+        cardIndex: 0,
+        answer: '',
+        lastCorrect: false,
+        lastSkipped: false,
+        lastAnswer: '',
+        score: 0,
+        results: [],
+        history: [],
+
+        init() {
+          this.history = JSON.parse(localStorage.getItem('hanzi_history') || '[]');
+        },
+
+        startSession(seed) {
+          const s = seed || this.seedInput;
+          this.currentSeed = s;
+          this.cards = pickCards(s);
+          this.cardIndex = 0;
+          this.answer = '';
+          this.score = 0;
+          this.results = [];
+          this.screen = 'card';
+          this.$nextTick(() => this.$refs.answerInput?.focus());
+        },
+
+        submitAnswer() {
+          const userAnswer = this.answer.toLowerCase().trim();
+          const correct = userAnswer === this.cards[this.cardIndex].p;
+          this.lastCorrect = correct;
+          this.lastSkipped = false;
+          this.lastAnswer = this.answer.trim();
+          if (correct) this.score++;
+          this.results.push({ card: this.cards[this.cardIndex], correct });
+          this.answer = '';
+          this.screen = 'result';
+        },
+
+        skipCard() {
+          this.lastCorrect = false;
+          this.lastSkipped = true;
+          this.lastAnswer = '';
+          this.results.push({ card: this.cards[this.cardIndex], correct: false });
+          this.answer = '';
+          this.screen = 'result';
+        },
+
+        nextCard() {
+          if (this.cardIndex + 1 < this.cards.length) {
+            this.cardIndex++;
+            this.screen = 'card';
+            this.$nextTick(() => this.$refs.answerInput?.focus());
+          } else {
+            this.saveResult();
+            this.screen = 'summary';
+          }
+        },
+
+        saveResult() {
+          const entry = {
+            seed: this.currentSeed,
+            score: this.score,
+            total: this.cards.length,
+            date: new Date().toLocaleDateString(),
+          };
+          this.history.push(entry);
+          if (this.history.length > 50) this.history = this.history.slice(-50);
+          localStorage.setItem('hanzi_history', JSON.stringify(this.history));
+        },
+      };
+    }
+
+    function seedFromWord(word) {
+      let h = 0;
+      for (const c of word) h = Math.imul(31, h) + c.charCodeAt(0) | 0;
+      return h >>> 0;
+    }
+
+    function mulberry32(seed) {
+      return function() {
+        seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+        let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function pickCards(word) {
+      const rng = mulberry32(seedFromWord(word));
+      const pool = [...HANZI];
+      const picked = [];
+      for (let i = 0; i < 20; i++) {
+        const idx = Math.floor(rng() * (pool.length - i)) + i;
+        [pool[i], pool[idx]] = [pool[idx], pool[i]];
+        picked.push(pool[i]);
+      }
+      return picked;
+    }
+  </script>
+</body>
+</html>
