@@ -153,10 +153,14 @@
         placeholder="Type pinyin..."
         x-model="practiceAnswer"
         x-ref="practiceInput"
-        @keydown.enter="practiceAnswer.trim() && submitPractice()"
-        class="w-full border-2 rounded-lg px-4 py-3 text-lg text-center focus:outline-none transition mb-2 border-gray-200 focus:border-blue-500"
+        @keydown.enter="!practiceCorrect && practiceAnswer.trim() && submitPractice()"
+        :disabled="practiceCorrect"
+        class="w-full border-2 rounded-lg px-4 py-3 text-lg text-center focus:outline-none transition mb-2"
+        :class="practiceCorrect ? 'border-green-400 bg-green-50 text-green-700' : 'border-gray-200 focus:border-blue-500'"
       >
+      <div x-show="practiceCorrect" class="text-center text-green-600 text-sm font-medium">Correct! Press Next to continue.</div>
       <button
+        x-show="!practiceCorrect"
         @click="submitPractice()"
         :disabled="!practiceAnswer.trim()"
         class="w-full bg-gray-700 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2 rounded-lg transition"
@@ -168,7 +172,7 @@
         <button
           x-ref="nextBtn"
           @click="nextCard()"
-          :disabled="practiceMode && !lastCorrect"
+          :disabled="practiceMode && !lastCorrect && !practiceCorrect"
           class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2 rounded-lg transition"
           x-text="cardIndex + 1 < cards.length ? 'Next' : 'See Results'"
         ></button>
@@ -296,13 +300,9 @@
           this.answer = '';
           this.practiceAnswer = '';
           this.practiceCorrect = false;
-          if (correct) {
-            this.nextCard();
-            return;
-          }
           this.screen = 'result';
           this.$nextTick(() => {
-            if (this.practiceMode) {
+            if (this.practiceMode && !correct) {
               this.$refs.practiceInput?.focus();
             } else {
               this.$refs.nextBtn?.focus();
