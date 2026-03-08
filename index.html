@@ -41,8 +41,12 @@
         </div>
       </div>
       <label class="flex items-center gap-2 mt-4 cursor-pointer select-none w-fit">
-        <input type="checkbox" x-model="practiceMode" class="w-4 h-4 accent-blue-600">
+        <input type="checkbox" x-model="practiceMode" @change="if(practiceMode) easyMode = false" class="w-4 h-4 accent-blue-600">
         <span class="text-sm text-gray-600 font-medium">Practice mode</span>
+      </label>
+      <label class="flex items-center gap-2 mt-2 cursor-pointer select-none w-fit">
+        <input type="checkbox" x-model="easyMode" @change="if(easyMode) practiceMode = false" class="w-4 h-4 accent-blue-600">
+        <span class="text-sm text-gray-600 font-medium">Easy mode</span>
       </label>
     </div>
 
@@ -97,6 +101,7 @@
 
     <div class="bg-white rounded-xl shadow p-4">
       <input
+        x-show="!easyMode"
         type="text"
         placeholder="Type pinyin..."
         x-model="answer"
@@ -105,7 +110,20 @@
         @keydown.escape="skipCard()"
         class="w-full border-2 border-gray-200 rounded-lg px-4 py-3 text-lg text-center focus:outline-none focus:border-blue-500 transition mb-3"
       >
-      <div class="flex gap-3">
+      <div x-show="easyMode" class="flex flex-col gap-3 mt-4">
+        <template x-for="(choice, i) in easyChoices" :key="i">
+          <button
+            @click="selectEasyChoice(i)"
+            :disabled="easySelected !== null"
+            x-text="choice.p"
+            class="w-full py-3 rounded-xl text-lg font-semibold border-2 transition"
+            :class="easySelected === i
+              ? (choice.correct ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700')
+              : 'bg-white border-gray-200 hover:border-blue-400'"
+          ></button>
+        </template>
+      </div>
+      <div x-show="!easyMode" class="flex gap-3">
         <button
           @click="skipCard()"
           class="flex-1 border-2 border-gray-200 hover:bg-gray-50 text-gray-600 font-medium py-2 rounded-lg transition"
@@ -265,6 +283,10 @@
         practiceMode: false,
         practiceAnswer: '',
         practiceCorrect: false,
+        easyMode: false,
+        easyChoices: [],
+        easySelected: null,
+        easyHadWrong: false,
 
         init() {
           this.history = JSON.parse(localStorage.getItem('hanzi_history') || '[]');
@@ -286,7 +308,8 @@
           this.score = 0;
           this.results = [];
           this.screen = 'card';
-          this.$nextTick(() => this.focusInput(this.$refs.answerInput));
+          if (this.easyMode) this.generateEasyChoices();
+          this.$nextTick(() => { if (!this.easyMode) this.focusInput(this.$refs.answerInput); });
         },
 
         focusInput(el) {
@@ -345,10 +368,44 @@
           if (this.cardIndex + 1 < this.cards.length) {
             this.cardIndex++;
             this.screen = 'card';
-            this.$nextTick(() => this.focusInput(this.$refs.answerInput));
+            if (this.easyMode) this.generateEasyChoices();
+            this.$nextTick(() => { if (!this.easyMode) this.focusInput(this.$refs.answerInput); });
           } else {
             this.saveResult();
             this.screen = 'summary';
+          }
+        },
+
+        generateEasyChoices() {
+          const correct = this.cards[this.cardIndex];
+          const pool = HANZI.filter(h => h.c !== correct.c);
+          const idx1 = Math.floor(Math.random() * pool.length);
+          let idx2 = Math.floor(Math.random() * (pool.length - 1));
+          if (idx2 >= idx1) idx2++;
+          const choices = [
+            { p: correct.p, correct: true },
+            { p: pool[idx1].p, correct: false },
+            { p: pool[idx2].p, correct: false },
+          ];
+          for (let i = 2; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [choices[i], choices[j]] = [choices[j], choices[i]];
+          }
+          this.easyChoices = choices;
+          this.easySelected = null;
+          this.easyHadWrong = false;
+        },
+
+        selectEasyChoice(i) {
+          this.easySelected = i;
+          if (this.easyChoices[i].correct) {
+            const correct = !this.easyHadWrong;
+            if (correct) this.score++;
+            this.results.push({ card: this.cards[this.cardIndex], correct });
+            setTimeout(() => this.nextCard(), 1000);
+          } else {
+            this.easyHadWrong = true;
+            setTimeout(() => { this.easySelected = null; }, 1000);
           }
         },
 
