@@ -286,7 +286,12 @@
           this.score = 0;
           this.results = [];
           this.screen = 'card';
-          this.$nextTick(() => this.$refs.answerInput?.focus());
+          this.$nextTick(() => this.focusInput(this.$refs.answerInput));
+        },
+
+        focusInput(el) {
+          window.scrollTo(0, 0);
+          el?.focus();
         },
 
         submitAnswer() {
@@ -303,7 +308,7 @@
           this.screen = 'result';
           this.$nextTick(() => {
             if (this.practiceMode && !correct) {
-              this.$refs.practiceInput?.focus();
+              this.focusInput(this.$refs.practiceInput);
             } else {
               this.$refs.nextBtn?.focus();
             }
@@ -321,7 +326,7 @@
           this.screen = 'result';
           this.$nextTick(() => {
             if (this.practiceMode) {
-              this.$refs.practiceInput?.focus();
+              this.focusInput(this.$refs.practiceInput);
             } else {
               this.$refs.nextBtn?.focus();
             }
@@ -340,7 +345,7 @@
           if (this.cardIndex + 1 < this.cards.length) {
             this.cardIndex++;
             this.screen = 'card';
-            this.$nextTick(() => this.$refs.answerInput?.focus());
+            this.$nextTick(() => this.focusInput(this.$refs.answerInput));
           } else {
             this.saveResult();
             this.screen = 'summary';
