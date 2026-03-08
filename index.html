@@ -84,9 +84,14 @@
   <!-- CARD -->
   <div x-show="screen === 'card'" class="py-2">
     <div class="flex justify-between items-center mb-6">
-      <span class="text-sm text-gray-500 font-medium">
-        Card <span x-text="cardIndex + 1"></span> / <span x-text="cards.length"></span>
-      </span>
+      <div class="flex items-center gap-2">
+        <button @click="screen = 'home'; seedInput = ''; window.history.replaceState(null, '', location.pathname)" class="text-gray-400 hover:text-gray-600 transition" title="Exit session">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+        <span class="text-sm text-gray-500 font-medium">Card <span x-text="cardIndex + 1"></span> / <span x-text="cards.length"></span></span>
+      </div>
       <span class="text-sm font-bold text-gray-600 tracking-widest" x-text="currentSeed"></span>
     </div>
 
@@ -140,9 +145,14 @@
   <!-- RESULT -->
   <div x-show="screen === 'result'" class="py-2">
     <div class="flex justify-between items-center mb-6">
-      <span class="text-sm text-gray-500 font-medium">
-        Card <span x-text="cardIndex + 1"></span> / <span x-text="cards.length"></span>
-      </span>
+      <div class="flex items-center gap-2">
+        <button @click="screen = 'home'; seedInput = ''; window.history.replaceState(null, '', location.pathname)" class="text-gray-400 hover:text-gray-600 transition" title="Exit session">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+        <span class="text-sm text-gray-500 font-medium">Card <span x-text="cardIndex + 1"></span> / <span x-text="cards.length"></span></span>
+      </div>
       <span class="text-sm font-bold text-gray-600 tracking-widest" x-text="currentSeed"></span>
     </div>
 
@@ -252,13 +262,20 @@
       </div>
     </div>
 
+    <button
+      @click="shareSession()"
+      class="w-full border-2 border-gray-300 hover:bg-gray-50 text-gray-600 font-semibold py-3 rounded-xl transition mb-3"
+    >
+      <span x-show="!shareCopied">Share session</span>
+      <span x-show="shareCopied">Copied to clipboard</span>
+    </button>
     <div class="flex gap-3">
       <button
         @click="startSession(currentSeed)"
         class="flex-1 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold py-3 rounded-xl transition"
       >Try Again</button>
       <button
-        @click="screen = 'home'; seedInput = ''"
+        @click="screen = 'home'; seedInput = ''; window.history.replaceState(null, '', location.pathname)"
         class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition"
       >New Session</button>
     </div>
@@ -288,8 +305,15 @@
         easySelected: null,
         easyHadWrong: false,
 
+        shareCopied: false,
+
         init() {
           this.history = JSON.parse(localStorage.getItem('hanzi_history') || '[]');
+          const hash = location.hash.slice(1).replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase();
+          if (hash.length === 3) {
+            this.seedInput = hash;
+            this.startSession(hash);
+          }
         },
 
         startPreview() {
@@ -302,6 +326,7 @@
         startSession(seed) {
           const s = (seed || this.seedInput).toUpperCase();
           this.currentSeed = s;
+          location.hash = s;
           this.cards = pickCards(s);
           this.cardIndex = 0;
           this.answer = '';
@@ -407,6 +432,12 @@
             this.easyHadWrong = true;
             setTimeout(() => { this.easySelected = null; }, 1000);
           }
+        },
+
+        shareSession() {
+          navigator.clipboard.writeText(location.href);
+          this.shareCopied = true;
+          setTimeout(() => { this.shareCopied = false; }, 2000);
         },
 
         saveResult() {
